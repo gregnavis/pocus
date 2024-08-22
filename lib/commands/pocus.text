@@ -1,0 +1,31 @@
+#!/bin/sh
+
+text() {
+  case "$1" in
+  bold) tput -Tansi bold ;;
+  red) tput -Tansi setaf 1 ;;
+  green) tput -Tansi setaf 2 ;;
+  yellow) tput -Tansi setaf 3 ;;
+  blue) tput -Tansi setaf 4 ;;
+  reset) tput -Tansi sgr0 ;;
+  *) spell_panic "text: invalid argument $1" ;;
+  esac
+}
+
+status() {
+  case "$1" in
+  ok) text green; echo "OK"; text reset ;;
+  error) text red; echo "ERROR"; text reset ;;
+  skip) text yellow; echo "SKIP"; text reset ;;
+  no) text red; echo "no"; text reset ;;
+  yes) text green; echo "yes"; text reset ;;
+  *) spell_panic "status: invalid argument $1" ;;
+  esac
+}
+
+notice() {
+  echo
+  text blue
+  echo "NOTICE:" "$*"
+  text reset
+}

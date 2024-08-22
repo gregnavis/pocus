@@ -1,0 +1,16 @@
+#!/bin/sh
+
+user_change_home() {
+  __user="$1"
+  __home="$2"
+
+  step_start "Change home directory of ${__user} to ${__home}"
+
+  __current_home=$(userinfo "${__user}" | grep dir | cut -f 2)
+
+  if [ "${__current_home}" != "${__home}" ]; then
+    step_run doas usermod -d "${__home}" "${__user}"
+  fi
+
+  step_finish
+}

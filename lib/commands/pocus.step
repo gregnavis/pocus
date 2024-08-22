@@ -1,0 +1,31 @@
+#!/bin/sh
+
+step_start() {
+  STEP_COUNT=0
+  printf "%s ... " "$1"
+}
+
+step_run() {
+  STEP_COUNT=$((STEP_COUNT+1))
+  if ! execute_run "$@"; then
+    execute_report_error
+  fi
+}
+
+step_finish() {
+  if [ "${STEP_COUNT}" -eq 0 ]; then
+    status skip
+  else
+    status ok
+  fi
+
+  STEP_COUNT=""
+}
+
+step_custom() {
+  title="$1"
+  shift
+  step_start "${title}"
+  step_run "$@"
+  step_finish
+}

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+cron_install() {
+  if test $# -ne 2; then
+    spell_panic "cron_install: expected arguments are: <user> <path>"
+  fi
+
+  step_start "Installing crontab $2 for $1"
+  step_run doas crontab -u "$1" "$POCUS_SPELLBOOK_FILES$2"
+  step_finish
+}

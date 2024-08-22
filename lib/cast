@@ -1,0 +1,92 @@
+#!/bin/sh
+
+set -e
+
+# Read command line arguments.
+if [ $# -ne 1 ]; then
+  echo "Usage: cast <spellbook>" 1>&2
+  exit 1
+fi
+
+spellbook="$1"
+
+# Determine the absolute location of the pocus directory.
+cast_path=$(realpath "$0")
+pocus_lib=$(dirname "${cast_path}")
+pocus_root=$(realpath "${pocus_lib}/..")
+
+# Go to the pocus directory.
+if ! cd "${pocus_root}"; then
+  echo "Error: cannot change the directory to ${pocus_root}" 1>&2
+  exit 1
+fi
+
+# Create a temporary directory.
+tmp_dir=$(mktemp -d)
+export POCUS_TMP_STDERR="${tmp_dir}/stderr"
+
+# Create the log directory for the current run.
+timestamp=$(date '+%Y-%m-%d/%H-%M-%S')
+export POCUS_LOGS="${PWD}/log/${timestamp}"
+mkdir -p "${POCUS_LOGS}"
+
+# Create log files expected by pocus commands.
+export POCUS_COPY_LOG="${POCUS_LOGS}/copy"
+export POCUS_INSTALL_PACKAGE_LOG="${POCUS_LOGS}/package_install"
+touch "${POCUS_COPY_LOG}" "${POCUS_INSTALL_PACKAGE_LOG}"
+
+# Export the location of spellbook spells and files.
+export POCUS_SPELLBOOK_SPELLS="${PWD}/${spellbook}/spells"
+export POCUS_SPELLBOOK_FILES="${PWD}/${spellbook}/files"
+
+. ./lib/commands/pocus.text
+
+# Cast all spells in order.
+for spell_path in "${POCUS_SPELLBOOK_SPELLS}"/*; do
+  spell=$(basename "${spell_path}")
+
+  text bold
+  echo "### ${spell}"
+  text reset
+  echo
+
+  set +e
+  sh -e "${POCUS_SPELLBOOK_SPELLS}/${spell}"
+  spell_status=$?
+  set -e
+
+  echo
+
+  if [ "${spell_status}" -eq 0 ]; then
+    text green
+    echo "${spell}: SUCCESS"
+    text reset
+  elif [ "${spell_status}" -eq 1 ]; then
+    text red
+    echo "${spell}: ERROR"
+    echo
+    echo "pocus has returned an error when running ${spell}. This most likely means the command it tried to run failed on the target host due to a reason unreleated to pocus, e.g. insufficient permission, missing files, unknown command."
+    text reset
+    exit 1
+  elif [ "${spell_status}" -eq 2 ]; then
+    text yellow
+    echo "${spell}: SKIPPING"
+    text reset
+  elif [ "${spell_status}" -eq 127 ]; then
+    text red
+    echo "${spell}: PANIC"
+    echo
+    echo "pocus has panicked when running ${spell}. This means the spell calls a pocus command in an invalid way. Please see the error message above for more details."
+    text reset
+    exit 1
+  else
+    text red
+    echo "${spell}: UNKNOWN ERROR"
+    echo
+    echo "${spell} has exited with code ${spell_status} which is not recognized as a special-purpose exit code by pocus. The execution of the spellbook has been terminated. Please inspect the error message above, if any, resolve the problem, and retry."
+    text reset
+    exit 1
+  fi
+
+  echo
+done

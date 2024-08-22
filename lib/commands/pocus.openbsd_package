@@ -1,0 +1,15 @@
+#!/bin/sh
+
+openbsd_package_install() {
+  if test $# -ne 1; then
+    spell_panic "openbsd_package_install: expected arguments are: <package name>"
+  fi
+
+  step_start "Install $1"
+  if ! pkg_info -q -e "$1"; then
+    step_run doas pkg_add "$1"
+    echo $name >> "$POCUS_INSTALL_PACKAGE_LOG"
+  fi
+  step_finish
+}
+

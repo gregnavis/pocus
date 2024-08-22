@@ -1,0 +1,32 @@
+#!/bin/sh
+
+execute_run() {
+  # shellcheck disable=SC2034
+  execute_command="$*"
+
+  # shellcheck disable=SC2034
+  execute_stdout=$("$@" 2>"${POCUS_TMP_STDERR}")
+
+  # shellcheck disable=SC2034
+  execute_exit=$?
+
+  return $execute_exit
+}
+
+execute_report_error() {
+  if [ -z "${execute_command}" ]; then
+    spell_panic "no command has been executed"
+  fi
+
+  status error
+  echo
+  text red
+  echo "Command:"
+  echo "${execute_command}"
+  echo
+  echo "Standard error:"
+  cat "${POCUS_TMP_STDERR}"
+  text reset
+
+  spell_error "a command returned a non-zero exit status"
+}

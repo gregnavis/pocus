@@ -1,0 +1,80 @@
+#!/bin/sh
+
+file_copy() {
+  if [ $# -ne 3 ]; then
+    spell_panic "file_copy: expected arguments are: <file> <owner> <mode>"
+  fi
+
+  __target="$1"
+  __source="${POCUS_SPELLBOOK_FILES}${__target}"
+  __owner="$2"
+  __mode="$3"
+
+  __prepare_owner
+  __prepare_mode
+
+  step_start "Copy ${__target} as ${__owner}, mode ${__mode}"
+
+  if ! doas diff "${__source}" "${__target}"; then
+    step_run doas cp "${__source}" "${__target}"
+    echo "${__target}" >> "${POCUS_COPY_LOG}"
+  fi
+
+  __actual_owner=$(doas stat -f "%Su:%Sg" "${__target}")
+  if [ "${__actual_owner}" != "${__owner}" ]; then
+    step_run doas chown "${__owner}" "${__target}"
+    echo "${__target}" >> "${POCUS_COPY_LOG}"
+  fi
+
+  __actual_mode=$(doas stat -f "%p" "${__target}" | cut -c 3-)
+  if [ "${__actual_mode}" != "${__mode}" ]; then
+    step_run doas chmod "${__mode}" "${__target}"
+    echo "${__target}" >> "${POCUS_COPY_LOG}"
+  fi
+
+  step_finish
+}
+
+file_create() {
+  if [ $# -ne 3 ]; then
+    spell_panic "file_create: expected arguments are: <file> <owner> <mode>"
+  fi
+
+  __path="$1"
+  __owner="$2"
+  __mode="$3"
+
+  __prepare_owner
+  __prepare_mode
+
+  step_start "Create file ${__path}, owner ${__owner}, mode ${__mode}"
+
+  if ! doas [ -f "${__path}" ]; then
+    step_run doas touch "${__path}"
+    echo "${__path}" >> "${POCUS_COPY_LOG}"
+  fi
+
+  __actual_owner=$(doas stat -f "%Su:%Sg" "${__path}")
+  if [ "${__actual_owner}" != "${__owner}" ]; then
+    step_run doas chown "${__owner}" "${__path}"
+  fi
+
+  __actual_mode=$(doas stat -f "%p" "${__path}" | cut -c 3-)
+  if [ "${__actual_mode}" != "${__mode}" ]; then
+    step_run doas chmod "${__mode}" "${__path}"
+  fi
+
+  step_finish
+}
+
+file_any_copied() {
+  while test $# -gt 0; do
+    if grep -x "$1" "${POCUS_COPY_LOG}" > /dev/null; then
+      return 0
+    fi
+
+    shift
+  done
+
+  return 1
+}

@@ -1,0 +1,33 @@
+#!/bin/sh
+
+directory_create() {
+  if [ $# -ne 3 ]; then
+    spell_panic "directory_create: expected arguments are: <path> <owner> <mode>"
+  fi
+
+  __path="$1"
+  __owner="$2"
+  __mode="$3"
+
+  __prepare_owner
+  __prepare_mode
+
+  step_start "Create directory ${__path}, owner ${__owner}, mode ${__mode}"
+
+  if ! doas [ -d "${__path}" ]; then
+    step_run doas mkdir "${__path}"
+    echo "${__path}" >> "${POCUS_COPY_LOG}"
+  fi
+
+  __actual_owner=$(doas stat -f "%Su:%Sg" "${__path}")
+  if [ "${__actual_owner}" != "${__owner}" ]; then
+    step_run doas chown "${__owner}" "${__path}"
+  fi
+
+  __actual_mode=$(doas stat -f "%p" "${__path}" | cut -c 2-)
+  if [ "${__actual_mode}" != "${__mode}" ]; then
+    step_run doas chmod "${__mode}" "${__path}"
+  fi
+
+  step_finish
+}

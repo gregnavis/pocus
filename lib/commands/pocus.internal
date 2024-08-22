@@ -1,0 +1,22 @@
+#!/bin/sh
+
+__prepare_owner() {
+  __user=${__owner%%:*}
+  __group=${__owner##*:}
+
+  # shellcheck disable=SC2249
+  case "${__user}" in
+  [0-9]*) __user=$(userinfo "${__user}" | grep login | cut -f 2) ;;
+  esac
+
+  # shellcheck disable=SC2249
+  case "${__group}" in
+  [0-9]*) __group=$(groupinfo "${__group}" | grep name | cut -f 2) ;;
+  esac
+
+  __owner="${__user}:${__group}"
+}
+
+__prepare_mode() {
+  return 0
+}

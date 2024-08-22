@@ -1,0 +1,64 @@
+#!/bin/sh
+
+set -e
+
+pocus_path=$(realpath "$0")
+pocus_lib=$(dirname "${pocus_path}")/../lib
+pocus_lib=$(realpath "${pocus_lib}")
+
+# PARSE AND VALIDATE ARGUMENTS
+# ============================
+
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 <spellbook> <target definition>" 1>&2
+  exit 1
+fi
+
+spellbook="$1"
+target="$2"
+
+if ! [ -d "${spellbook}" ]; then
+  echo "Error: the spellbook ${spellbook} does not exist or is not a directory" 1>&2
+  exit 1
+fi
+
+if ! [ -f "${target}" ]; then
+  echo "Error: the target definition ${target} does not exist or is not a regular file" 1>&2
+  exit 1
+fi
+
+# PREPARE THE TARGET DEFINITION
+# =============================
+
+# This file is provided by the caller, so it doesn't make sense for ShellCheck
+# to peek inside.
+# shellcheck disable=SC1090
+. "${target}"
+
+if [ -z "${target_host}" ]; then
+  echo "Error: the target definition ${target} must define target_host" 1>&2
+  exit 1
+fi
+
+: "${target_rsync_options=}"
+: "${target_pocus_root=pocus/}"
+
+# COPY FILES TO THE TARGET
+# ========================
+
+# target_rsync_options should be subject to word splitting as it's a list of
+# additional positional arguments for rsync.
+# shellcheck disable=SC2086,SC2248
+if ! rsync ${target_rsync_options} --delete -r "${pocus_lib}" "${spellbook}" "${target_host}:${target_pocus_root}"; then
+  echo "Error: cannot sync pocus and spellbook files to ${target_host}" 1>&2
+  exit 1
+fi
+
+# CAST THE SPELLBOOK ON THE TARGET
+# ================================
+
+# Expanding the second argument to SSH on the client side is intentional.
+# shellcheck disable=SC2029
+if ! ssh "${target_host}" "${target_pocus_root}/lib/cast ${spellbook}"; then
+  exit 1
+fi

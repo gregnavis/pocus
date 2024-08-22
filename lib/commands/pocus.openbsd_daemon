@@ -1,0 +1,13 @@
+#!/bin/sh
+
+openbsd_daemon_enable() {
+  step_start "Enabling daemon $1"
+
+  __flags=$(rcctl get "$1" flags)
+
+  if [ "${__flags}" = "NO" ]; then
+    step_run doas rcctl enable "$1"
+  fi
+
+  step_finish
+}

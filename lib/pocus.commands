@@ -1,0 +1,13 @@
+#!/bin/sh
+
+. ./lib/commands/pocus.cron
+. ./lib/commands/pocus.directory
+. ./lib/commands/pocus.execute
+. ./lib/commands/pocus.exit
+. ./lib/commands/pocus.file
+. ./lib/commands/pocus.internal
+. ./lib/commands/pocus.openbsd_daemon
+. ./lib/commands/pocus.openbsd_package
+. ./lib/commands/pocus.step
+. ./lib/commands/pocus.text
+. ./lib/commands/pocus.user
