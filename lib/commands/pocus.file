@@ -15,7 +15,7 @@ file_copy() {
 
   step_start "Copy ${__target} as ${__owner}, mode ${__mode}"
 
-  if ! doas diff "${__source}" "${__target}"; then
+  if ! doas diff -q "${__source}" "${__target}" 2>&1 > /dev/null; then
     step_run doas cp "${__source}" "${__target}"
     echo "${__target}" >> "${POCUS_COPY_LOG}"
   fi
