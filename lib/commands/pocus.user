@@ -6,7 +6,7 @@ user_change_home() {
 
   step_start "Change home directory of ${__user} to ${__home}"
 
-  __current_home=$(userinfo "${__user}" | grep dir | cut -f 2)
+  __current_home=$(userinfo "${__user}" | grep -e '^dir\>' | cut -f 2)
 
   if [ "${__current_home}" != "${__home}" ]; then
     step_run doas usermod -d "${__home}" "${__user}"
