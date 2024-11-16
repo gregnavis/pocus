@@ -67,6 +67,24 @@ file_create() {
   step_finish
 }
 
+file_link() {
+  if [ $# -ne 2 ]; then
+    spell_panic "file_link: expected arguments are: <file> <link>"
+  fi
+
+  __file="$1"
+  __link="$2"
+
+  step_start "Linking ${__link} to ${__file}"
+  __link_stat=$(doas stat -f "%T%Y" "${__link}")
+  if [ "${__link_stat}" != "@${__file}" ]; then
+    step_run doas ln -sh "${__file}" "${__link}"
+    echo "${__link}" >> "${POCUS_COPY_LOG}"
+  fi
+
+  step_finish
+}
+
 file_any_copied() {
   while test $# -gt 0; do
     if grep -x "$1" "${POCUS_COPY_LOG}" > /dev/null; then
