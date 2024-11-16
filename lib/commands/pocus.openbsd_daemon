@@ -11,3 +11,23 @@ openbsd_daemon_enable() {
 
   step_finish
 }
+
+openbsd_daemon_disable() {
+  step_start "Disabling daemon $1"
+
+  __flags=$(rcctl get "$1" flags)
+
+  if [ "${__flags}" != "NO" ]; then
+    step_run doas rcctl disable "$1"
+  fi
+
+  step_finish
+}
+
+openbsd_daemon_stop() {
+  step_start "Stopping daemon $1"
+  if rcctl check "$1" 1>&2 > /dev/null; then
+    step_run doas rcctl stop "$1"
+  fi
+  step_finish
+}
