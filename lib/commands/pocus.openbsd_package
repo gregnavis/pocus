@@ -6,7 +6,7 @@ openbsd_package_install() {
   fi
 
   step_start "Install $1"
-  if ! pkg_info -q -e "$1"; then
+  if ! pkg_info -q -e "$1-*"; then
     step_run doas pkg_add "$1"
     echo $name >> "$POCUS_INSTALL_PACKAGE_LOG"
   fi
